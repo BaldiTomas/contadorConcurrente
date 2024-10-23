@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Importa CORS
 import os
 
 app = Flask(__name__)
+CORS(app)  # Habilita CORS para todas las rutas
 
 # Función para contar las palabras en un archivo
 def count_words_in_file(file_path):
