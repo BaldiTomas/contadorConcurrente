@@ -1,9 +1,8 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Importa CORS
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
-CORS(app)  # Habilita CORS para todas las rutas
 
 # Función para contar las palabras en un archivo
 def count_words_in_file(file_path):
@@ -27,12 +26,19 @@ def count_words():
 
     results = {}
     
-    # Procesar cada archivo
-    for file in files:
-        file_path = os.path.join("/tmp", file.filename)
-        file.save(file_path)
-        word_count = count_words_in_file(file_path)
-        results[file.filename] = word_count
+    # Usar ThreadPoolExecutor para procesamiento concurrente
+    with ThreadPoolExecutor() as executor:
+        # Guardar los futuros
+        future_to_file = {executor.submit(count_words_in_file, os.path.join("/tmp", file.filename)): file.filename for file in files}
+        
+        # Procesar resultados a medida que se completan
+        for future in future_to_file:
+            filename = future_to_file[future]
+            try:
+                word_count = future.result()
+                results[filename] = word_count
+            except Exception as e:
+                results[filename] = str(e)
 
     # Devolver el conteo de palabras de cada archivo
     return jsonify(results)
