@@ -28,8 +28,12 @@ def count_words():
     
     # Usar ThreadPoolExecutor para procesamiento concurrente
     with ThreadPoolExecutor() as executor:
-        # Guardar los futuros
-        future_to_file = {executor.submit(count_words_in_file, os.path.join("/tmp", file.filename)): file.filename for file in files}
+        future_to_file = {}
+        for file in files:
+            file_path = os.path.join("/tmp", file.filename)
+            file.save(file_path)  # Guarda el archivo
+            future = executor.submit(count_words_in_file, file_path)
+            future_to_file[future] = file.filename  # Mapea el futuro al nombre del archivo
         
         # Procesar resultados a medida que se completan
         for future in future_to_file:
